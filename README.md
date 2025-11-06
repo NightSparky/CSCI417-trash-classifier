@@ -78,3 +78,25 @@ Using React.ts, ReactFlow, ShadCN, and Tailwind for CSS
 ![Example 2](images/2.png)
 
 ![Example 3](images/4.png)
+
+## How to Setup:
+```python 
+#To go into the backend folder.
+cd backend
+
+#Set up a virtual environment with all the prerequisites.
+python -m venv venv
+venv\Scripts\activate       # (on Windows)
+pip install -r requirements.txt
+
+#Load up the backend service.
+uvicorn main:app --reload
+
+#Go back to the frontend folder.
+cd ..
+
+#Install the prerequisites for the frontend using npm.
+npm install
+
+#Load up the frontend.
+npm run dev
