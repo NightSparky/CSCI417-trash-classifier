@@ -73,7 +73,7 @@ Using React.ts, ReactFlow, ShadCN, and Tailwind for CSS
 
 ## Screenshots & Samples:
 
-![Example 1](images/1.png)
+![Example 1](images/5.png)
 
 ![Example 2](images/2.png)
 
