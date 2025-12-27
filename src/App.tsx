@@ -31,7 +31,7 @@ export default function App() {
 
     try {
       console.log("This has been clicked");
-      const res = await fetch("http://127.0.0.1:8000/classify", {
+      const res = await fetch("http://csci417-trash-classifier-production.up.railway.app:8000/classify", {
         method: "POST",
         body: formData,
       });
