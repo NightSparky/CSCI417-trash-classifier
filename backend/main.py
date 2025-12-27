@@ -6,6 +6,7 @@ from tensorflow.keras.preprocessing import image
 import numpy as np
 import joblib
 import io
+import tensorflow as tf
 
 cnn_model = load_model("backend/models/cnn_model.keras")
 log_model = joblib.load("backend/models/log_model.pkl")
@@ -20,9 +21,15 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],        
-    allow_headers=["*"],        # allow EVERYTHINGGGG
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
+# This is useful for xtracting the featurres for the RF and Log Reg models!!
+feature_extractor = tf.keras.Sequential()
+for layer in cnn_model.layers[:-2]:
+    feature_extractor.add(layer)
+
 
 @app.post("/classify")
 async def classify(image_file: UploadFile = File(...)):
@@ -34,17 +41,13 @@ async def classify(image_file: UploadFile = File(...)):
 
     cnn_probs = cnn_model.predict(img_array)
 
-    X_flat = img_array.reshape(1, -1) # To flatten the image for the sake of the log and rf models
+    features = feature_extractor.predict(img_array)
 
     # --- LR & RF predictions ---
-    log_probs = log_model.predict_proba(X_flat)
-    rf_probs = rf_model.predict_proba(X_flat)
+    log_probs = log_model.predict_proba(features)
+    rf_probs = rf_model.predict_proba(features)
 
     # The Ensemble
-    cnn_conf = np.max(cnn_probs, axis=1)
-    mask = cnn_conf < 0.6
-    ensemble_preds = np.argmax(cnn_probs, axis=1)
-
     ensemble_probs = 0.5*rf_probs + 0.25*log_probs + 0.25*cnn_probs
     ensemble_preds = np.argmax(ensemble_probs, axis=1)
 
