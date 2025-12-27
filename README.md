@@ -144,12 +144,12 @@ Example:
 ---
 ## Metrics
 
-![[Metric1.png]]
-![[Metric3.png]]
-![[Metric2.png]]
+![[images/Metric1.png]]
+![[images/Metric3.png]]
+![[images/Metric2.png]]
 ---
 
 ## Screenshots
 
-![[Image1.png]]
-![[Image2.png]]
+![[images/Image1.png]]
+![[images/Image2.png]]
