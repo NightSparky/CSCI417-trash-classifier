@@ -7,9 +7,9 @@ import numpy as np
 import joblib
 import io
 
-cnn_model = load_model("models/cnn_model.keras")
-log_model = joblib.load("models/log_model.pkl")
-rf_model = joblib.load("models/rf_model.pkl")
+cnn_model = load_model("backend/models/cnn_model.keras")
+log_model = joblib.load("backend/models/log_model.pkl")
+rf_model = joblib.load("backend/models/rf_model.pkl")
 
 class_labels = ["metal", "organic", "paper", "plastic"]
 
