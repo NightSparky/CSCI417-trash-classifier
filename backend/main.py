@@ -1,56 +1,62 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import List
 
-from parser import reg_to_postfix
-from builder import postfix_to_nfa, nfa_to_dict, reset_counter
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import image
+import numpy as np
+import joblib
+import io
+
+cnn_model = load_model("models/cnn_model.keras")
+log_model = joblib.load("models/log_model.pkl")
+rf_model = joblib.load("models/rf_model.pkl")
+
+class_labels = ["metal", "organic", "paper", "plastic"]
 
 app = FastAPI()
 
-# THIS SCALE IS GOING TOO FARRR
+# obligatory middleware for fastAPI more or less.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins="http://localhost:5173",
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],        
     allow_headers=["*"],        # allow EVERYTHINGGGG
 )
 
-# class for what to expect from the frontend
-class RegexRequest(BaseModel):
-    regex: str
+@app.post("/classify")
+async def classify(image_file: UploadFile = File(...)):
+    # Load image
+    img = image.load_img(io.BytesIO(await image_file.read()), target_size=(128,128))
+    print("File read into memory")
+    img_array = image.img_to_array(img) / 255.0 # turns the image into a NumPy array
+    img_array = np.expand_dims(img_array, axis=0)  # batch dimension so we can pass the image to the prediction models
 
-# class to define the transitions
-class Transition(BaseModel):
-    from_: str = Field(..., alias="from")
-    to: str
-    symbol: str
+    cnn_probs = cnn_model.predict(img_array)
 
-# class to define the WHOLE responseee
-class NFAResponse(BaseModel):
-    states: List[str]
-    start: str
-    accept: str
-    transitions: List[Transition]
+    X_flat = img_array.reshape(1, -1) # To flatten the image for the sake of the log and rf models
 
-@app.post("/generate-nfa", response_model=NFAResponse)
-async def generate_nfa(request: RegexRequest):
+    # --- LR & RF predictions ---
+    log_probs = log_model.predict_proba(X_flat)
+    rf_probs = rf_model.predict_proba(X_flat)
 
-# @app.post("/", respon
+    # The Ensemble
+    cnn_conf = np.max(cnn_probs, axis=1)
+    mask = cnn_conf < 0.6
+    ensemble_preds = np.argmax(cnn_probs, axis=1)  # start with CNN
 
-    # at this point in time i realize i've overblown the scale of this project.
-    reset_counter()
-    
-    # Convert regex to postfix
-    postfix = reg_to_postfix(request.regex)
-    print("post fix is", postfix)
-    
-    # Convert postfix to NFA
-    nfa = postfix_to_nfa(postfix)
-    
-    # Convert NFA to dictionary format
-    nfa_dict = nfa_to_dict(nfa)
-    print(nfa_dict)
-    
-    return NFAResponse(**nfa_dict)
+    if mask[0]:  # if CNN is not confident enough, we start consulting the rest of the ensemble.
+        ensemble_probs = 0.6*cnn_probs + 0.2*log_probs + 0.2*rf_probs
+        ensemble_preds[0] = int(np.argmax(ensemble_probs))
+
+    predicted_class = class_labels[int(ensemble_preds[0])]
+    confidence = float(np.max(cnn_probs)) 
+
+    # Return all probabilities to showcase on the page.
+    all_probs = {label: float(prob) for label, prob in zip(class_labels, cnn_probs[0])}
+
+    return {
+        "predicted_class": predicted_class,
+        "confidence": confidence,
+        "all_probs": all_probs
+    }
