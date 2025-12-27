@@ -43,14 +43,13 @@ async def classify(image_file: UploadFile = File(...)):
     # The Ensemble
     cnn_conf = np.max(cnn_probs, axis=1)
     mask = cnn_conf < 0.6
-    ensemble_preds = np.argmax(cnn_probs, axis=1)  # start with CNN
+    ensemble_preds = np.argmax(cnn_probs, axis=1)
 
-    if mask[0]:  # if CNN is not confident enough, we start consulting the rest of the ensemble.
-        ensemble_probs = 0.6*cnn_probs + 0.2*log_probs + 0.2*rf_probs
-        ensemble_preds[0] = int(np.argmax(ensemble_probs))
+    ensemble_probs = 0.5*rf_probs + 0.25*log_probs + 0.25*cnn_probs
+    ensemble_preds = np.argmax(ensemble_probs, axis=1)
 
     predicted_class = class_labels[int(ensemble_preds[0])]
-    confidence = float(np.max(cnn_probs)) 
+    confidence = float(np.max(ensemble_probs[0]))
 
     # Return all probabilities to showcase on the page.
     all_probs = {label: float(prob) for label, prob in zip(class_labels, cnn_probs[0])}
