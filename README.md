@@ -144,12 +144,12 @@ Example:
 ---
 ## Metrics
 
-![[images/Metric1.png]]
-![[images/Metric3.png]]
-![[images/Metric2.png]]
+![CNN Accuracy over Epochs](images/Metric1.png)
+![Model Accuracy Comparison](images/Metric2.png)
+![Logistic Regression Confusion Matrix](images/Metric3.png)
 ---
 
 ## Screenshots
 
-![[images/Image1.png]]
-![[images/Image2.png]]
+![Image 1](images/Image1.png)
+![Image 2](images/Image2.png)
